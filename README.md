@@ -22,4 +22,4 @@ Flow of script:
   1. Find target's open ports, service names & versions.
   2. Searchsploit services names & versions, output saved as searchsploit.txt
   3. GoBuster if webport is open to find subdirectories using default common.txt wordlist, output saved as gobuster.txt
-     a. Eyewitness to take screenshots of all pages GoBuster found including root-directory
+  4. Eyewitness to take screenshots of all pages GoBuster found including root-directory
