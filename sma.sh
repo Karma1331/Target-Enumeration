@@ -1,48 +1,66 @@
-#written for fun & learning, by a noob.
-read -p "Who's the target? " target
+#!/bin/bash
+
+read -p "Target Name? " targetName
+read -p "Target IP? " targetIP
 read -p "Where should we place target directory? " outPath
 
-mkdir $outPath/$target
-cd $outPath/$target
+echo "$targetIP $targetName" >> /etc/hosts
 
-nmap -sV -oX nmap.xml $target
+mkdir $outPath/$targetName
+cd $outPath/$targetName
 
+nmap -vv -Pn -sC -sV -p- -oX nmap.xml -oN nmap.txt $targetName
+#TODO build an option for quick and comprehensive nmap & wordlists
+
+#Grabs open ports from Nmap
 openPort=( $(grep -oP '(?!portid=")[0-9]*(?="><state state="open")' nmap.xml ))
-#didn't RTFM and don't need it...grabs the service name -> svcName=( $(grep -oP '(?<=product=").*?(?=")' nmap.xml ))
-#didn't RTFM and don't need it...grabs service version  -> svcVersion=( $(grep -oP '(?<=version=")\S*?(?=")' nmap.xml ))
 
-#scan for known vuln's based on services from nmap
+#scan for known vulnerabilities based on nmap
 searchsploit -v --nmap nmap.xml >> searchsploit.txt
 
 for port in "${openPort[@]}"
 do
-	#web port scanning nmap -> gobuster -> eyewitness	
-	echo "Port $port"
+	#web port scanning nmap -> gobuster -> eyewitness
+	echo "Enumerating port $port"
 	case $port in
 		80) 
-			echo "http://$target" >> gobuster.txt
-			gobuster dir -u http://$target -w /usr/share/wordlists/dirb/common.txt -q -n -e >> gobuster.txt
-			eyewitness -f gobuster.txt -d eyewitness --web --no-prompt
+			echo "http://$targetName" >> gobuster.txt
+			gobuster dir -u http://$targetName -w /usr/share/wordlists/dirb/common.txt -q -n -e >> gobuster.txt
+			eyewitness -f gobuster.txt -d eyewitness --web --resolve --no-prompt
+		;;
+		139)
+			smbclient -gL $targetIP -N >> smbclient.txt
+		;;
+		389)
+			nmap -p389 --script ldap-search -v0 -oN nmap-ldap.txt $targetIP
+			domain=( $(grep -oP '((?<=Context: ).*)' nmap-ldap.txt ))
+			ldapsearch -x -p 389 -h $targetIP -b "$domain" "objectclass=person" >> ldap-findings.txt
 		;;
 		443) 
-			echo "https://$target" >> gobuster.txt
-			gobuster dir -u https://$target -w /usr/share/wordlists/dirb/common.txt -q -n -e -k >> gobuster.txt
-			eyewitness -f gobuster.txt -d eyewitness --headless --no-prompt
+			echo "https://$targetName" >> gobuster.txt
+			gobuster dir -u https://$targetName -w /usr/share/wordlists/dirb/common.txt -q -n -e -k >> gobuster.txt
+			eyewitness -f gobuster.txt -d eyewitness --headless --resolve --no-prompt
+		;;
+		445)
+			smbclient -gL $targetIP -p 445 -N >> smbclient.txt
+		;;
+		2049)
+			showmount -e $targetIP >> nfsmount.txt
 		;;
 		8000) 
-			echo "http://$target:8000" >> gobuster.txt
-			gobuster dir -u http://$target:8000 -w /usr/share/wordlists/dirb/common.txt -q -n -e >> gobuster.txt
-			eyewitness -f gobuster.txt -d eyewitness --web --no-prompt
+			echo "http://$targetName:8000" >> gobuster.txt
+			gobuster dir -u http://$targetName:8000 -w /usr/share/wordlists/dirb/common.txt -q -n -e >> gobuster.txt
+			eyewitness -f gobuster.txt -d eyewitness --web --resolve --no-prompt
 		;;
 		8080) 
-			echo "http://$target:8080" >> gobuster.txt
-			gobuster dir -u http://$target:8080 -w /usr/share/wordlists/dirb/common.txt -q -n -e >> gobuster.txt
-			eyewitness -f gobuster.txt -d eyewitness --web --no-prompt
+			echo "http://$targetName:8080" >> gobuster.txt
+			gobuster dir -u http://$targetName:8080 -w /usr/share/wordlists/dirb/common.txt -q -n -e >> gobuster.txt
+			eyewitness -f gobuster.txt -d eyewitness --web --resolve --no-prompt
 		;;
 		8500) 
-			echo "http://$target:8500" >> gobuster.txt
-			gobuster dir -u http://$target:8500 -w /usr/share/wordlists/dirb/common.txt -q -n -e >> gobuster.txt
-			eyewitness -f gobuster.txt -d eyewitness --web --no-prompt
+			echo "http://$targetName:8500" >> gobuster.txt
+			gobuster dir -u http://$targetName:8500 -w /usr/share/wordlists/dirb/common.txt -q -n -e >> gobuster.txt
+			eyewitness -f gobuster.txt -d eyewitness --web --resolve --no-prompt
 		;;
 	esac
 done
