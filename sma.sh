@@ -4,7 +4,12 @@ read -p "Target Name? " targetName
 read -p "Target IP? " targetIP
 read -p "Where should we place target directory? " outPath
 
-echo "$targetIP $targetName" >> /etc/hosts
+if grep -q "$targetIP $targetName" /etc/hosts;
+then
+	echo "Host record exists"
+else
+	echo "$targetIP $targetName" >> /etc/hosts
+fi
 
 mkdir $outPath/$targetName
 cd $outPath/$targetName
@@ -25,8 +30,8 @@ do
 	case $port in
 		80) 
 			echo "http://$targetName" >> gobuster.txt
-			gobuster dir -u http://$targetName -w /usr/share/wordlists/dirb/common.txt -q -n -e >> gobuster.txt
-			eyewitness -f gobuster.txt -d eyewitness --web --resolve --no-prompt
+			gobuster dir -qneft 30 -x .php,.html --timeout 15s -u http://$targetName -w /usr/share/wordlists/dirb/big.txt >> gobuster.txt
+			eyewitness -f gobuster.txt -d eyewitness --web --threads 30 --resolve --no-prompt
 		;;
 		139)
 			smbclient -gL $targetIP -N >> smbclient.txt
@@ -38,7 +43,7 @@ do
 		;;
 		443) 
 			echo "https://$targetName" >> gobuster.txt
-			gobuster dir -u https://$targetName -w /usr/share/wordlists/dirb/common.txt -q -n -e -k >> gobuster.txt
+			gobuster dir -qnefkt 30 -x .php,.html --timeout 15s -u https://$targetName -w /usr/share/wordlists/dirb/big.txt >> gobuster.txt
 			eyewitness -f gobuster.txt -d eyewitness --headless --resolve --no-prompt
 		;;
 		445)
@@ -49,18 +54,18 @@ do
 		;;
 		8000) 
 			echo "http://$targetName:8000" >> gobuster.txt
-			gobuster dir -u http://$targetName:8000 -w /usr/share/wordlists/dirb/common.txt -q -n -e >> gobuster.txt
-			eyewitness -f gobuster.txt -d eyewitness --web --resolve --no-prompt
+			gobuster dir -qneft 30 -x .php,.html --timeout 15s -u http://$targetName:8000 -w /usr/share/wordlists/dirb/big.txt >> gobuster.txt
+			eyewitness -f gobuster.txt -d eyewitness --web --threads 30 --resolve --no-prompt
 		;;
 		8080) 
 			echo "http://$targetName:8080" >> gobuster.txt
-			gobuster dir -u http://$targetName:8080 -w /usr/share/wordlists/dirb/common.txt -q -n -e >> gobuster.txt
-			eyewitness -f gobuster.txt -d eyewitness --web --resolve --no-prompt
+			gobuster dir -qneft 30 -x .php,.html --timeout 15s -u http://$targetName:8080 -w /usr/share/wordlists/dirb/big.txt >> gobuster.txt
+			eyewitness -f gobuster.txt -d eyewitness --web --threads 30 --resolve --no-prompt
 		;;
 		8500) 
 			echo "http://$targetName:8500" >> gobuster.txt
-			gobuster dir -u http://$targetName:8500 -w /usr/share/wordlists/dirb/common.txt -q -n -e >> gobuster.txt
-			eyewitness -f gobuster.txt -d eyewitness --web --resolve --no-prompt
+			gobuster dir -qneft 30 -x .php,.html --timeout 15s -u http://$targetName:8500 -w /usr/share/wordlists/dirb/big.txt >> gobuster.txt
+			eyewitness -f gobuster.txt -d eyewitness --web --threads 30 --resolve --no-prompt
 		;;
 	esac
 done
